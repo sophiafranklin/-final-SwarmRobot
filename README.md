@@ -121,6 +121,7 @@ cd ..
 - Make sure all dependent packages are installed. You can check .travis.yml file for reference.
 - Specifically, make sure that the ros package *ddynamic_reconfigure* is installed. If *ddynamic_reconfigure* cannot be installed using APT, you may clone it into your workspace 'catkin_ws/src/' from [here](https://github.com/pal-robotics/ddynamic_reconfigure/tree/kinetic-devel) (Version 0.2.0)
 
+Can we modernize this bash? Eg `catkin init; catkin build`
 ```bash
 catkin_init_workspace
 cd ..
@@ -128,6 +129,8 @@ catkin_make clean
 catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release
 catkin_make install
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+<!-- It might be good to note that doing this ^^ makes it complicated to have more than 1 catkin workspace on a given computer.  -->
+<!-- Probably fine considering our applications but good to note -->
 source ~/.bashrc
 ```
 
@@ -205,6 +208,7 @@ You should see rplidar's scan result in the rviz.
 
 #### 2. Run rplidar node and view using test application
 
+<!-- Let them know which RPLidar they should have :) -->
 roslaunch rplidar_ros rplidar.launch (for RPLIDAR A1/A2)
 or
 roslaunch rplidar_ros rplidar_a3.launch (for RPLIDAR A3)
@@ -218,22 +222,34 @@ Notice: the different is serial_baudrate between A1/A2 and A3
 #### RPLidar frame
 
 RPLidar frame must be broadcasted according to picture shown in rplidar-frame.png
+<!-- I assume this picture will be embedded? -->
 
 ## Network setup
 ------------------
 
 1. Set up NUC and Nano with software (Ubuntu 18.04 and ROS). For the Nano, downloading ROS is a little trickier due to its arm-based architecture but JetsonHacks has nice, full software downloads. It's worth noting that the Jetson software can only be booted from a micro-sd card whereas the NUC could boot off of a flash drive. 
+<!-- Link to relevant Jetsonhacks support pages? -->
 2. Connect the NUC to local wifi and the Nano to NUC via ethernet (Nano doesn't have wifi access).
 3. Set static IP addresses with nm-connection-editor for the NUC and Nano on both wifi and ethernet sides, as IP addresses are dynamically assigned
+<!-- Can we have link to nm-connection-editor (or some explanation of what it is and how to install it? Is it a default Ubuntu program?) -->
 4. Set up chrome remote desktop on NUC so you can visualize its GUI. Set up ssh for Nano (chrome remote doesn't support arm-based architecture) with openssh.
+<!-- Are there explicit terminal commands we can give to do this? -->
 5. Dynamixel and RPLiDAR usb ports are also dynamically assigned on NUC but specific to each component, set symlinks in respective launch files via /etc/udev/rules
+<!-- Can you give an example of how to do this? -->
 6. Connect to the NUC via chrome remote and ssh into Nano to begin. While the above section on installing all necessary RealSense software is fine, sudo apt-get install ros-melodic-realsense2-camera downloads all necessary software to the Nano.
+<!-- Note that if you want to embed terminal commands you can do the following: -->
+<!-- ``` bash -->
+<!-- sudo apt install ros-melodic-.... -->
+<!-- sudo apt install that-package... -->
+<!-- ``` -->
 7. Set EXPORT ROS_MASTER_URI and EXPORT ROS_IP to Nano's IP address so you can run Rviz from NUC while running the RealSense through the Nano. To launching Nano launch files from NUC requires specific env. variables and a path set with a host key, which is explained in more depth below. 
+<!-- Where do you do this? Can you give the file locations? -->
 
 
 ### Setting Static IP Addresses for the NUC and Nano
 
 Setting the Nano’s IP address permanently was tricky due to the wandering range of IP addresses that the DCHP would accept/look for. Most of the time, the Nano connected to the NUC using 10.42.0.25, but every so often, 10.42.0.26 might be the correct address.
+<!-- Terminal command for finding the IP address? -->
 
 The solution to this is to go into the nm-manager-editor settings on the Nano (through a hard connection to the monitor + keyboard/mouse) and ‘MANUALLY’ setting the IP configuration to 10.42.0.25 through netmask 255.255.255.255 (IPv4 settings).
 
@@ -279,10 +295,12 @@ roslaunch rplidar_ros view_rplidar.launch  serial_port:=/dev/rplidar
 
 ### Environment Variables and Host Key Setup
 
-/opt/ros/melodic/env.sh needs to be edited to include specific environment variables on ~/.bashrc.
+`/opt/ros/melodic/env.sh` needs to be edited to include specific environment variables on `~/.bashrc`.
 
+```
 export ROS_IP=10.42.0.25
 export ROS_MASTER_URI=http://10.42.0.1:11311
+```
 
 Set up a group with additional machine info then include the file (which is included in the NUC launch file for conveniance). 
 
@@ -304,7 +322,7 @@ SSH keys won't work by default, e.g. if you already connected to the Jetson thro
 ```bash
 ssh -oHostKeyAlgorithms='ssh-rsa' 10.42.0.25
 
-Install realsense camera on NUC so that all of the files are there:
+# Install realsense camera on NUC so that all of the files are there:
 sudo apt-get install ros-melodic-realsense2-camera
 ``` 
 
@@ -325,7 +343,7 @@ We based our design around similar principles as the Turtlebot3, a popular indus
 - U2D2*
 - U2D2 Power Hub**
 
-\* U2D2 is needed for Dynamixel-to-computer communication  
+\* U2D2 is needed for Dynamixel-to-computer communication (via USB)
 \** U2D2 Power Hub supplies constant power to Dynamixels, necessary for required voltage and current
 
 #### Connection Diagram
@@ -389,6 +407,7 @@ Once the wifi and networking is configured, you can Chrome Remote or SSH into th
 Hello World for Components: Basic control with individual components
 
 ##### RealSense 
+<!-- Could also put this into bash command code -->
 1. Run roslaunch realsense2_camera rs_camera.launch to start the realsense node
 2. Run realsense-viewer to open the graphical display (best method for testing because user can see camera output)
 3. Run roslaunch realsense2_camera rs-camera.launch filters:=pointcloud and keep open
@@ -400,6 +419,7 @@ Debugging: designate Image Topic and Topic to the visual input that you want to 
 
 ##### Dynamixels 
 
+<!-- link to all relevant dynamixel webpages? -->
 Once the Dynamixels are configured with Dynamixel Wizard 2.0 (explained in greater detail under 'Troubleshooting', you can control the motors through the terminal. Dynamixel Workbench allow for python and cpp, and we recommend following the manual procedures for a ROS-based platform from the Dynamixel-Workbench GitHub repository. 
 
 Summing up the process:
@@ -428,6 +448,7 @@ This changes the permissions of RPLiDAR rules file from 0777 to 0666, as it auto
 ### Troubleshooting
 ---------------------
 
+<!-- Should definitely add the note that RealSense cameras tend to only work with the cables they come packaged with -->
 - Be sure to use USB3.x for the RealSense camera, otherwise you will run into limitations on depth+rgb throughput when testing in ROS. 
 [Intel's website](https://www.intelrealsense.com/wp-content/uploads/2019/03/Depth_Camera_powered_by_Ethernet_WhitePaper.pdf)  
 (Currently incomplete)
